@@ -125,7 +125,10 @@
                     <connections>
                         <outlet property="counterLabel" destination="sW2-ao-c2Q" id="Ipq-II-JZZ"/>
                         <outlet property="imageView" destination="uW5-au-k3W" id="XIY-9y-fv8"/>
+                        <outlet property="noButton" destination="dEq-eq-eYu" id="iAg-0B-Mag"/>
+                        <outlet property="questionLabel" destination="qVc-89-mT3" id="eyP-BX-6jF"/>
                         <outlet property="textLabel" destination="uKX-3O-tKN" id="tT5-h2-dFi"/>
+                        <outlet property="yesButton" destination="7eu-Hk-baO" id="dwj-Fh-Bto"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>

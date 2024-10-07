@@ -35,6 +35,10 @@ final class MovieQuizViewController: UIViewController {
     @IBOutlet private var textLabel: UILabel!
     @IBOutlet private var counterLabel: UILabel!
     
+    @IBOutlet weak var questionLabel: UILabel!
+    
+    @IBOutlet weak var noButton: UIButton!
+    @IBOutlet weak var yesButton: UIButton!
     
     private let questions: [QuizQuestion] = [
         QuizQuestion(
@@ -89,12 +93,9 @@ final class MovieQuizViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        for family in UIFont.familyNames {
-                    print("family:", family)
-                    for font in UIFont.fontNames(forFamilyName: family) {
-                        print("font:", font)
-                    }
-                }
+        
+        setupFont()
+       
         imageView.layer.cornerRadius = 20
         let currentQuestion = questions[currentQuestionIndex]
         show(quiz: convert(model: currentQuestion))
@@ -201,7 +202,22 @@ final class MovieQuizViewController: UIViewController {
         self.present(alert, animated: true, completion: nil)
     }
     
- }
+    private func setupFont(){
+        questionLabel.font = UIFont(name: "YSDisplay-Medium", size: 20)
+        counterLabel.font = UIFont(name: "YSDisplay-Medium", size: 20)
+        textLabel.font = UIFont(name: "YSDisplay-Bold", size: 23)
+        noButton.titleLabel?.font = UIFont(name: "YSDisplay-Medium", size: 20)
+        yesButton.titleLabel?.font = UIFont(name: "YSDisplay-Medium", size: 20)
+        
+        }
+        
+    }
+            
+        
+
+  
+    
+ 
 
     
     
