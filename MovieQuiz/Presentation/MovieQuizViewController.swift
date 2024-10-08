@@ -1,26 +1,26 @@
 import UIKit
 
-struct ViewModel {
+private struct ViewModel {
     let image: UIImage
     let question: String
     let questionNumber: String
 }
 
 // для состояния "Вопрос показан"
-struct QuizStepViewModel {
+private struct QuizStepViewModel {
   let image: UIImage
   let question: String
   let questionNumber: String
 }
 
 // для состояния "Результат квиза"
-struct QuizResultsViewModel {
+private struct QuizResultsViewModel {
   let title: String
   let text: String
   let buttonText: String
 }
 
-struct QuizQuestion {
+private struct QuizQuestion {
     let image: String
     let text: String
     let correctAnswer: Bool
@@ -30,15 +30,17 @@ struct QuizQuestion {
 final class MovieQuizViewController: UIViewController {
     // MARK: - Lifecycle
     
-    
     @IBOutlet private var imageView: UIImageView!
+    
     @IBOutlet private var textLabel: UILabel!
+    
     @IBOutlet private var counterLabel: UILabel!
     
-    @IBOutlet weak var questionLabel: UILabel!
+    @IBOutlet private weak var questionLabel: UILabel!
     
-    @IBOutlet weak var noButton: UIButton!
-    @IBOutlet weak var yesButton: UIButton!
+    @IBOutlet private weak var noButton: UIButton!
+    
+    @IBOutlet private weak var yesButton: UIButton!
     
     private let questions: [QuizQuestion] = [
         QuizQuestion(
@@ -89,13 +91,11 @@ final class MovieQuizViewController: UIViewController {
     //Переменная счетчика вопросов
     private var correctAnswer = 0
     
-    
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         setupFont()
-       
+        
         imageView.layer.cornerRadius = 20
         let currentQuestion = questions[currentQuestionIndex]
         show(quiz: convert(model: currentQuestion))
@@ -117,7 +117,7 @@ final class MovieQuizViewController: UIViewController {
     }
     
     
-    @IBAction func yesButtonClicked(_ sender: UIButton) {
+    @IBAction private func yesButtonClicked(_ sender: UIButton) {
         let currentQuestion = questions[currentQuestionIndex]
         let givenAnswer = true
         
@@ -129,7 +129,7 @@ final class MovieQuizViewController: UIViewController {
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
     }
     
-    @IBAction func noButtonClicked(_ sender: UIButton) {
+    @IBAction private func noButtonClicked(_ sender: UIButton) {
         let currentQuestion = questions[currentQuestionIndex]
         let givenAnswer = false
         
@@ -160,9 +160,9 @@ final class MovieQuizViewController: UIViewController {
             // идём в состояние "Результат квиза"
             let text = "Ваш результат: \(correctAnswer)/10"
             let finalNewModel = QuizResultsViewModel(
-                        title: "Этот раунд окончен!",
-                        text: text,
-                        buttonText: "Сыграть ещё раз")
+                title: "Этот раунд окончен!",
+                text: text,
+                buttonText: "Сыграть ещё раз")
             showResultAlert(finalNewModel)
         } else {
             currentQuestionIndex += 1
@@ -208,10 +208,9 @@ final class MovieQuizViewController: UIViewController {
         textLabel.font = UIFont(name: "YSDisplay-Bold", size: 23)
         noButton.titleLabel?.font = UIFont(name: "YSDisplay-Medium", size: 20)
         yesButton.titleLabel?.font = UIFont(name: "YSDisplay-Medium", size: 20)
-        
-        }
-        
     }
+    
+}
             
         
 
