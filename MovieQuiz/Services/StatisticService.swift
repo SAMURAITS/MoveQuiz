@@ -14,7 +14,7 @@ final class StatisticService {
     }
 }
 
-// или реализуем протокол с помощью расширения
+// реализуем протокол с помощью расширения
 extension StatisticService: StatisticServiceProtocol {
 
     var gamesCount: Int {
@@ -68,17 +68,7 @@ extension StatisticService: StatisticServiceProtocol {
             return Double(correct) / Double(total) * 100 //избежание деления на ноль
         }
     }
-//        var totalCorrectAnswers: Int = 0 // общее количество правильных ответов
-//        var totalQuestions: Int = 10     // общее количество вопросов
-//
-//        // Вычисляемая переменная для средней точности
-//        var totalAccuracy: Double {
-//            // Проверяем, что количество вопросов не равно нулю, чтобы избежать деления на ноль
-//            guard totalQuestions > 0 else { return 0.0 }
-//            return Double(totalCorrectAnswers) / Double(totalQuestions)
-//        }
 
-    
     func store(correct count: Int, total amount: Int) {
         gamesCount += 1
         let correctAnswe = storage.integer(forKey: Keys.correctAnswer.rawValue)

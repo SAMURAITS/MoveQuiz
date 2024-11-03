@@ -121,7 +121,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     }
     
     private func showNextQuestionOrResults() {
-        if currentQuestionIndex == questionsAmount {
+        if currentQuestionIndex >= questionsAmount - 1 {
             // идём в состояние "Результат квиза"
             statisticsService.store(correct: correctAnswer, total: questionsAmount)
 
@@ -137,11 +137,11 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
             showResultAlert(finalNewModel)
         } else {
 
-            questionFactory?.requestNextQuestion()
-            imageView.layer.borderWidth = 0
-            
             currentQuestionIndex += 1
             
+            questionFactory?.requestNextQuestion()
+            
+            imageView.layer.borderWidth = 0
         }
         
     }
@@ -152,16 +152,21 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
             message: result.text,
             buttonText: result.buttonText,
             completion: {[weak self] in
-                guard self != nil else { return }
-            
+                self?.resetGame()
+                
             } )
         alertPresenter.showResult(viewcontroller: self, model: alert)
+    }
+        private func resetGame() {
+            currentQuestionIndex = 0
+            correctAnswer = 0
+            questionFactory?.requestNextQuestion()
+            imageView.layer.borderWidth = 0
+                
+            }
+        
              
-            self.currentQuestionIndex = 0
-            self.correctAnswer = 0
-            self.showNextQuestionOrResults()
-       }
-    
+     
     private func setupFont(){
         questionLabel.font = UIFont(name: "YSDisplay-Medium", size: 20)
         counterLabel.font = UIFont(name: "YSDisplay-Medium", size: 20)
