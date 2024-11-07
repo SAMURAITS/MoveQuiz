@@ -1,6 +1,6 @@
 import UIKit
 
-final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
+final class MovieQuizViewController: UIViewController {
     // MARK: - Lifecycle
     
     @IBOutlet private var imageView: UIImageView!
@@ -15,6 +15,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     @IBOutlet private weak var yesButton: UIButton!
     
+    
+    @IBOutlet private var activityIndicator: UIActivityIndicatorView!
     
     //Переменная с индексом текущего вопроса
     private var currentQuestionIndex = 0
@@ -37,36 +39,27 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         
         statisticsService = StatisticService()
         
-       let questionFactory = QuestionFactory()
-        questionFactory.delegate = self
-        self.questionFactory = questionFactory
-
-        
+        questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
+    
         setupFont()
         
         imageView.layer.cornerRadius = 20
     
-        questionFactory.requestNextQuestion()
+        questionFactory?.requestNextQuestion()
+        showLoadingIndicator()
+        questionFactory?.loadData()
     }
     
     // MARK: - QuestionFactoryDelegate
-
-    func didReceiveNextQuestion(question: QuizQuestion?) {
-        guard let question = question else {
-               return
-           }
-
-           currentQuestion = question
-           let viewModel = convert(model: question)
-        
-        DispatchQueue.main.async { [weak self] in
-               self?.show(quiz: viewModel)
-           }
-    }
     
+    private func showLoadingIndicator() {
+        activityIndicator.isHidden = false
+        activityIndicator.startAnimating()
+    }
+
     private func convert(model: QuizQuestion) -> QuizStepViewModel {
         let questionStep = QuizStepViewModel(
-            image: UIImage(named: model.image) ?? UIImage(),
+            image: UIImage(data: model.image) ?? UIImage(),
             question: model.text,
             questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
         return questionStep
@@ -165,7 +158,24 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
                 
             }
         
-             
+    private func hideLoadingIndicator() {
+        activityIndicator.stopAnimating()
+        activityIndicator.isHidden = true
+    }
+    
+    private func showNetworkError(message: String) {
+        hideLoadingIndicator()
+        
+        let model = AlertModel(title: "Error", message: message, buttonText: "Пробовать еще раз") {[weak self] in
+            guard let self else { return }
+            
+            self.currentQuestionIndex = 0
+            self.correctAnswer = 0
+            
+            self.questionFactory?.requestNextQuestion()
+        }
+        alertPresenter.showResult(viewcontroller: self, model: model)
+    }
      
     private func setupFont(){
         questionLabel.font = UIFont(name: "YSDisplay-Medium", size: 20)
@@ -177,8 +187,28 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
 }
             
-        
+extension MovieQuizViewController: QuestionFactoryDelegate {
+    func didReceiveNextQuestion(question: QuizQuestion?) {
+        guard let question = question else {
+               return
+           }
 
+           currentQuestion = question
+           let viewModel = convert(model: question)
+        
+        DispatchQueue.main.async { [weak self] in
+               self?.show(quiz: viewModel)
+           }
+    }
+    func didLoadDataFromServer() {
+        activityIndicator.isHidden = true
+        questionFactory?.requestNextQuestion()
+    }
+    
+    func didFailToLoadData(with error: Error) {
+        showNetworkError(message: error.localizedDescription)
+    }
+}
   
     
  
