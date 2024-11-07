@@ -2,71 +2,218 @@ import UIKit
 
 final class MovieQuizViewController: UIViewController {
     // MARK: - Lifecycle
+    
+    @IBOutlet private var imageView: UIImageView!
+    
+    @IBOutlet private var textLabel: UILabel!
+    
+    @IBOutlet private var counterLabel: UILabel!
+    
+    @IBOutlet private weak var questionLabel: UILabel!
+    
+    @IBOutlet private weak var noButton: UIButton!
+    
+    @IBOutlet private weak var yesButton: UIButton!
+    
+    
+    @IBOutlet private var activityIndicator: UIActivityIndicatorView!
+    
+    //Переменная с индексом текущего вопроса
+    private var currentQuestionIndex = 0
+    
+    //Переменная счетчика вопросов
+    private var correctAnswer = 0
+    
+    private var questionFactory: QuestionFactoryProtocol?
+    
+    private let questionsAmount: Int = 10
+    
+    private var currentQuestion: QuizQuestion?
+    
+    private var alertPresenter = AlertPresenter()
+    
+    private var statisticsService: StatisticServiceProtocol = StatisticService()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        statisticsService = StatisticService()
+        
+        questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
+    
+        setupFont()
+        
+        imageView.layer.cornerRadius = 20
+    
+        questionFactory?.requestNextQuestion()
+        showLoadingIndicator()
+        questionFactory?.loadData()
+    }
+    
+    // MARK: - QuestionFactoryDelegate
+    
+    private func showLoadingIndicator() {
+        activityIndicator.isHidden = false
+        activityIndicator.startAnimating()
+    }
+
+    private func convert(model: QuizQuestion) -> QuizStepViewModel {
+        let questionStep = QuizStepViewModel(
+            image: UIImage(data: model.image) ?? UIImage(),
+            question: model.text,
+            questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
+        return questionStep
+    }
+    
+    private func show (quiz step: QuizStepViewModel) {
+        imageView.image = step.image
+        textLabel.text = step.question
+        counterLabel.text = step.questionNumber
+        
+    }
+    
+    @IBAction private func yesButtonClicked(_ sender: UIButton) {
+        guard let currentQuestion = currentQuestion else {
+            return
+        }
+        let givenAnswer = true
+        
+        if givenAnswer == currentQuestion.correctAnswer {
+            correctAnswer += 1
+            
+        }
+        
+        showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
+    }
+    
+    @IBAction private func noButtonClicked(_ sender: UIButton) {
+        guard let currentQuestion = currentQuestion else {
+            return
+        }
+        let givenAnswer = false
+        
+        if givenAnswer == currentQuestion.correctAnswer {
+            correctAnswer += 1
+            
+        }
+        
+        showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
+    }
+    
+    private func showAnswerResult(isCorrect: Bool){
+        imageView.layer.borderWidth = 8
+        if isCorrect {
+            imageView.layer.borderColor = UIColor(resource: .ypGreen).cgColor
+        } else {
+            imageView.layer.borderColor = UIColor(resource: .ypRed).cgColor
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            self.showNextQuestionOrResults()
+        }
+    }
+    
+    private func showNextQuestionOrResults() {
+        if currentQuestionIndex >= questionsAmount - 1 {
+            // идём в состояние "Результат квиза"
+            statisticsService.store(correct: correctAnswer, total: questionsAmount)
+
+            let gamesCount = statisticsService.gamesCount
+            let bestGame = statisticsService.bestGame
+            
+            let text = "Ваш результат: \(correctAnswer)/\(questionsAmount)\n" +
+            "Количество сыграных квизов: \(gamesCount)\n" +
+            "Рекорд: \(bestGame.correct)/\(bestGame.total) \(statisticsService.bestGame.date.dateTimeString)\n" +
+            "Средняя точность: \(String(format: "%.2f", statisticsService.totalAccuracy))%"
+            let finalNewModel = QuizResultsViewModel(title: "Этот раунд окончен!", text: text, buttonText: "Сыграть ещё раз")
+
+            showResultAlert(finalNewModel)
+        } else {
+
+            currentQuestionIndex += 1
+            
+            questionFactory?.requestNextQuestion()
+            
+            imageView.layer.borderWidth = 0
+        }
+        
+    }
+    private func showResultAlert(_ result: QuizResultsViewModel) {
+        
+        let alert = AlertModel(
+            title: result.title,
+            message: result.text,
+            buttonText: result.buttonText,
+            completion: {[weak self] in
+                self?.resetGame()
+                
+            } )
+        alertPresenter.showResult(viewcontroller: self, model: alert)
+    }
+        private func resetGame() {
+            currentQuestionIndex = 0
+            correctAnswer = 0
+            questionFactory?.requestNextQuestion()
+            imageView.layer.borderWidth = 0
+                
+            }
+        
+    private func hideLoadingIndicator() {
+        activityIndicator.stopAnimating()
+        activityIndicator.isHidden = true
+    }
+    
+    private func showNetworkError(message: String) {
+        hideLoadingIndicator()
+        
+        let model = AlertModel(title: "Error", message: message, buttonText: "Пробовать еще раз") {[weak self] in
+            guard let self else { return }
+            
+            self.currentQuestionIndex = 0
+            self.correctAnswer = 0
+            
+            self.questionFactory?.requestNextQuestion()
+        }
+        alertPresenter.showResult(viewcontroller: self, model: model)
+    }
+     
+    private func setupFont(){
+        questionLabel.font = UIFont(name: "YSDisplay-Medium", size: 20)
+        counterLabel.font = UIFont(name: "YSDisplay-Medium", size: 20)
+        textLabel.font = UIFont(name: "YSDisplay-Bold", size: 23)
+        noButton.titleLabel?.font = UIFont(name: "YSDisplay-Medium", size: 20)
+        yesButton.titleLabel?.font = UIFont(name: "YSDisplay-Medium", size: 20)
+    }
+    
+}
+            
+extension MovieQuizViewController: QuestionFactoryDelegate {
+    func didReceiveNextQuestion(question: QuizQuestion?) {
+        guard let question = question else {
+               return
+           }
+
+           currentQuestion = question
+           let viewModel = convert(model: question)
+        
+        DispatchQueue.main.async { [weak self] in
+               self?.show(quiz: viewModel)
+           }
+    }
+    func didLoadDataFromServer() {
+        activityIndicator.isHidden = true
+        questionFactory?.requestNextQuestion()
+    }
+    
+    func didFailToLoadData(with error: Error) {
+        showNetworkError(message: error.localizedDescription)
     }
 }
+  
+    
+ 
 
-/*
- Mock-данные
- 
- 
- Картинка: The Godfather
- Настоящий рейтинг: 9,2
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: ДА
- 
- 
- Картинка: The Dark Knight
- Настоящий рейтинг: 9
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: ДА
- 
- 
- Картинка: Kill Bill
- Настоящий рейтинг: 8,1
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: ДА
- 
- 
- Картинка: The Avengers
- Настоящий рейтинг: 8
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: ДА
- 
- 
- Картинка: Deadpool
- Настоящий рейтинг: 8
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: ДА
- 
- 
- Картинка: The Green Knight
- Настоящий рейтинг: 6,6
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: ДА
- 
- 
- Картинка: Old
- Настоящий рейтинг: 5,8
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: НЕТ
- 
- 
- Картинка: The Ice Age Adventures of Buck Wild
- Настоящий рейтинг: 4,3
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: НЕТ
- 
- 
- Картинка: Tesla
- Настоящий рейтинг: 5,1
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: НЕТ
- 
- 
- Картинка: Vivarium
- Настоящий рейтинг: 5,8
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: НЕТ
-*/
+    
+    
+    
+
